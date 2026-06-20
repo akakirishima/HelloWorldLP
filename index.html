@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>研究室 在室・勤怠・日誌管理システム｜LabBoard（仮称）</title>
+  <meta name="description" content="Raspberry Pi 1台と研究室LANだけで、在室・勤怠・日誌をまるごと管理。研究室全体と部屋ごとの在室状況をひと目で把握できる、タッチ操作前提のWebアプリ。React 19 + FastAPI。">
+  <meta name="theme-color" content="#14467a">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="研究室 在室・勤怠・日誌管理システム（仮称 LabBoard）">
+  <meta property="og:description" content="研究室の『いま、誰がいる?』を、ひと目で。Raspberry Pi 1台と研究室LANで動く、在室・勤怠・日誌の統合ボード。">
+  <meta property="og:locale" content="ja_JP">
+
+  <!-- Favicon: a presence tile glyph -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2314467a'/%3E%3Crect x='6' y='6' width='20' height='3' fill='%23fff'/%3E%3Ccircle cx='9' cy='20' r='3' fill='%23fff'/%3E%3Crect x='15' y='18' width='11' height='4' fill='%23fff'/%3E%3C/svg%3E">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Roboto:wght@400;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">メインコンテンツへ</a>
+
+  <!-- ============ HEADER ============ -->
+  <header class="site-header" id="site-header">
+    <a class="brand" href="#main" aria-label="LabBoard（仮称） ホーム">
+      <span class="brand__mark">LabBoard <span class="brand__tag">仮称</span></span>
+      <span class="brand__sub" lang="en">Presence / Attendance / Log</span>
+    </a>
+
+    <nav class="nav" aria-label="グローバルナビゲーション">
+      <ul class="nav__list">
+        <li><a href="#board" lang="en">Board</a></li>
+        <li><a href="#attendance" lang="en">Attendance</a></li>
+        <li><a href="#logbook" lang="en">Log</a></li>
+        <li><a href="#features" lang="en">Features</a></li>
+        <li><a href="#tech" lang="en">Tech</a></li>
+        <li><a class="nav__github" href="https://github.com/akakirishima/HelloWorld" target="_blank" rel="noopener" lang="en">GitHub</a></li>
+      </ul>
+    </nav>
+
+    <div class="header-right">
+      <span class="status-pill" aria-label="稼働中">
+        <span class="dot dot--live" aria-hidden="true"></span>稼働中
+      </span>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="mobile-nav" aria-label="メニューを開く">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </button>
+    </div>
+
+    <!-- Mobile nav panel -->
+    <div class="mobile-nav" id="mobile-nav" hidden>
+      <a href="#board" lang="en">Board</a>
+      <a href="#attendance" lang="en">Attendance</a>
+      <a href="#logbook" lang="en">Log</a>
+      <a href="#features" lang="en">Features</a>
+      <a href="#architecture" lang="en">Architecture</a>
+      <a href="#tech" lang="en">Tech</a>
+      <a href="https://github.com/akakirishima/HelloWorld" target="_blank" rel="noopener" lang="en">GitHub</a>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <!-- ============ HERO ============ -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero__top">
+        <div class="inner inner--wide">
+          <span class="numeral" aria-hidden="true">01</span>
+          <p class="kicker" lang="en"><span>Lab Presence · Attendance · Logboard</span></p>
+          <h1 class="hero__title" id="hero-title">研究室の<span class="accent">『いま、誰がいる?』</span>を、ひと目で。</h1>
+          <hr class="rule-strong">
+          <div class="hero__deck-row">
+            <p class="hero__deck">Raspberry Pi 1台と研究室LANだけで、在室・勤怠・日誌をまるごと管理。</p>
+            <p class="hero__meta mono"><span lang="en">MVP</span> / <span lang="en">CLOSED LAN</span> / <span lang="en">SESSION AUTH</span></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero__board panel-blue">
+        <div class="inner inner--wide">
+          <div class="board-head">
+            <p class="kicker kicker--light" lang="en"><span>Presence Board — Realtime</span></p>
+            <p class="board-clock mono" aria-hidden="true"><span class="dot dot--live"></span><span data-clock>2026-06-20 00:00:00</span></p>
+          </div>
+          <table class="board-table board-table--hero">
+            <caption class="visually-hidden">研究室の在室状況一覧（サンプル）</caption>
+            <thead>
+              <tr>
+                <th scope="col" lang="en">Member</th>
+                <th scope="col" lang="en">Room</th>
+                <th scope="col" lang="en">Status</th>
+                <th scope="col" lang="en">Last Punch</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>佐藤</td><td class="mono">第1実験室</td><td><span class="dot dot--in" aria-hidden="true"></span>在室</td><td class="mono">09:12</td></tr>
+              <tr><td>田中</td><td class="mono">第1実験室</td><td><span class="dot dot--in" aria-hidden="true"></span>在室</td><td class="mono">08:47</td></tr>
+              <tr class="is-out"><td>鈴木</td><td class="mono">第2実験室</td><td><span class="dot dot--out" aria-hidden="true"></span>不在</td><td class="mono">18:40</td></tr>
+              <tr><td>高橋</td><td class="mono">輪講室</td><td><span class="dot dot--in" aria-hidden="true"></span>在室</td><td class="mono">10:05</td></tr>
+              <tr class="is-out"><td>渡辺</td><td class="mono">第2実験室</td><td><span class="dot dot--out" aria-hidden="true"></span>不在</td><td class="mono">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <a class="scroll-cue" href="#overview" aria-label="下へスクロール">
+          <span lang="en">Scroll</span>
+          <span class="scroll-cue__line" aria-hidden="true"><span class="scroll-cue__tick"></span></span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ============ OVERVIEW ============ -->
+    <section class="section" id="overview" aria-labelledby="overview-title" data-reveal>
+      <div class="inner">
+        <p class="kicker" lang="en"><span>Overview</span></p>
+        <h2 class="section__title" id="overview-title">タッチ1枚で完結する、研究室のための在室ボード。</h2>
+        <hr class="rule-strong">
+        <div class="overview-grid">
+          <div class="overview-col">
+            <span class="numeral-sm mono" aria-hidden="true">01</span>
+            <h3 class="overview-col__title">リアルタイム在室把握</h3>
+            <p>研究室全体と部屋ごとの在室状況を、ひと目で。</p>
+          </div>
+          <div class="overview-col">
+            <span class="numeral-sm mono" aria-hidden="true">02</span>
+            <h3 class="overview-col__title">その場で打刻</h3>
+            <p>出勤・退勤・ステータス変更を記録し、履歴として残す。</p>
+          </div>
+          <div class="overview-col">
+            <span class="numeral-sm mono" aria-hidden="true">03</span>
+            <h3 class="overview-col__title">漏れなく記録</h3>
+            <p>日誌・勤怠履歴・監査ログで、研究室の活動を残す。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PRESENCE BOARD ============ -->
+    <section class="section section--wide" id="board" aria-labelledby="board-title" data-reveal>
+      <div class="inner inner--wide">
+        <span class="numeral numeral--section" aria-hidden="true">02</span>
+        <p class="kicker" lang="en"><span>Presence Board</span></p>
+        <h2 class="section__title" id="board-title">研究室全体と部屋ごとの在室状況を、リアルタイムに。</h2>
+        <p class="section__lead">研究室全体と部屋ごとの在室状況をボード表示。今そこに誰がいるかをリアルタイムに確認できます。その場でタッチして状態を変更。</p>
+
+        <div class="board-layout">
+          <table class="board-table">
+            <caption class="visually-hidden">研究室全体の在室状況一覧（サンプル）</caption>
+            <thead>
+              <tr>
+                <th scope="col" lang="en">Member</th>
+                <th scope="col" lang="en">Room</th>
+                <th scope="col" lang="en">Status</th>
+                <th scope="col" lang="en">Last Punch</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>佐藤</td><td class="mono">第1実験室</td><td><span class="dot dot--in" aria-hidden="true"></span>在室</td><td class="mono">09:12</td></tr>
+              <tr><td>田中</td><td class="mono">第1実験室</td><td><span class="dot dot--in" aria-hidden="true"></span>在室</td><td class="mono">08:47</td></tr>
+              <tr class="is-out"><td>中村</td><td class="mono">第1実験室</td><td><span class="dot dot--out" aria-hidden="true"></span>不在</td><td class="mono">17:30</td></tr>
+              <tr><td>高橋</td><td class="mono">輪講室</td><td><span class="dot dot--in" aria-hidden="true"></span>在室</td><td class="mono">10:05</td></tr>
+              <tr class="is-out"><td>伊藤</td><td class="mono">輪講室</td><td><span class="dot dot--out" aria-hidden="true"></span>不在</td><td class="mono">—</td></tr>
+              <tr class="is-out"><td>鈴木</td><td class="mono">第2実験室</td><td><span class="dot dot--out" aria-hidden="true"></span>不在</td><td class="mono">18:40</td></tr>
+              <tr><td>山本</td><td class="mono">第2実験室</td><td><span class="dot dot--in" aria-hidden="true"></span>在室</td><td class="mono">11:20</td></tr>
+              <tr><td>渡辺</td><td class="mono">第2実験室</td><td><span class="dot dot--in" aria-hidden="true"></span>在室</td><td class="mono">12:02</td></tr>
+            </tbody>
+          </table>
+          <aside class="board-toggle" aria-label="ビュー切り替え">
+            <span class="board-toggle__item is-active">全体ビュー</span>
+            <span class="board-toggle__item">部屋別ビュー</span>
+            <p class="board-toggle__note">その場でタッチして<br>状態を変更。</p>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ATTENDANCE ============ -->
+    <section class="section" id="attendance" aria-labelledby="attendance-title" data-reveal>
+      <div class="inner">
+        <span class="numeral numeral--section" aria-hidden="true">03</span>
+        <p class="kicker" lang="en"><span>Attendance</span></p>
+        <h2 class="section__title" id="attendance-title">出退勤の打刻と、管理者修正に対応する勤怠履歴。</h2>
+        <div class="two-col">
+          <div class="timeline" aria-label="勤怠タイムラインの例">
+            <div class="timeline__item"><span class="mono">09:12</span><span>出勤</span></div>
+            <div class="timeline__item"><span class="mono">12:30</span><span>一時退室</span></div>
+            <div class="timeline__item"><span class="mono">13:15</span><span>在室</span></div>
+            <div class="timeline__item"><span class="mono">18:40</span><span>退勤</span></div>
+          </div>
+          <div class="two-col__body">
+            <p>出勤・退勤の打刻とステータス変更をその場で実行し、勤怠履歴として蓄積。管理者による打刻の修正にも対応し、記録の正確さを保てます。</p>
+            <p>誤打刻は管理者がまとめて修正。いつ・誰が・どう直したかは監査ログに残ります。</p>
+            <span class="pill-tag" lang="en">Admin Correction</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ LOGBOOK ============ -->
+    <section class="section" id="logbook" aria-labelledby="logbook-title" data-reveal>
+      <div class="inner">
+        <span class="numeral numeral--section" aria-hidden="true">04</span>
+        <p class="kicker" lang="en"><span>Logbook</span></p>
+        <h2 class="section__title" id="logbook-title">日々の作業を、日誌として残す。</h2>
+        <p class="section__lead">日々の作業記録を日誌として作成・編集・参照。研究室の活動を文章で残せます。</p>
+        <article class="log-entry">
+          <p class="log-entry__date mono">2026-06-20</p>
+          <h3 class="log-entry__title">第2実験室 計測セットアップ</h3>
+          <p class="log-entry__body">午前は測定系の配線を再構成。午後にキャリブレーションを実施し、ログを更新。次回は温度補正を検討する。</p>
+          <p class="log-entry__actions"><span>編集</span> / <span>閲覧</span></p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============ FEATURES ============ -->
+    <section class="section" id="features" aria-labelledby="features-title" data-reveal>
+      <div class="inner">
+        <p class="kicker" lang="en"><span>Features</span></p>
+        <h2 class="section__title" id="features-title">研究室の運用に必要な機能を、ひととおり。</h2>
+        <div class="feature-grid">
+          <div class="feature-cell">
+            <span class="feature-cell__idx mono" aria-hidden="true">F-01</span>
+            <h3 class="feature-cell__title">在室ボード（全体・部屋別）</h3>
+            <p>研究室全体と部屋ごとの在室状況をボード表示。今そこに誰がいるかをリアルタイムに確認できます。</p>
+          </div>
+          <div class="feature-cell">
+            <span class="feature-cell__idx mono" aria-hidden="true">F-02</span>
+            <h3 class="feature-cell__title">出退勤・ステータス管理</h3>
+            <p>出勤・退勤の打刻とステータス変更をその場で実行。メンバーの状態がすぐに反映されます。</p>
+          </div>
+          <div class="feature-cell">
+            <span class="feature-cell__idx mono" aria-hidden="true">F-03</span>
+            <h3 class="feature-cell__title">勤怠履歴と管理者修正</h3>
+            <p>勤怠の履歴を蓄積し、管理者による打刻の修正にも対応。記録の正確さを保てます。</p>
+          </div>
+          <div class="feature-cell">
+            <span class="feature-cell__idx mono" aria-hidden="true">F-04</span>
+            <h3 class="feature-cell__title">日誌の作成・編集・閲覧</h3>
+            <p>日々の作業記録を日誌として作成・編集・参照。研究室の活動を文章で残せます。</p>
+          </div>
+          <div class="feature-cell">
+            <span class="feature-cell__idx mono" aria-hidden="true">F-05</span>
+            <h3 class="feature-cell__title">管理ツール</h3>
+            <p>メンバー・部屋・表示順を管理者がまとめて設定。研究室の構成に合わせて運用できます。</p>
+          </div>
+          <div class="feature-cell">
+            <span class="feature-cell__idx mono" aria-hidden="true">F-06</span>
+            <h3 class="feature-cell__title">監査ログ</h3>
+            <p>すべての変更操作を監査ログとして記録。いつ・何が変更されたかを後から追跡できます。</p>
+          </div>
+          <div class="feature-cell">
+            <span class="feature-cell__idx mono" aria-hidden="true">F-07</span>
+            <h3 class="feature-cell__title">タッチモニタ・ボードモード</h3>
+            <p>タッチスクリーン専用のボードモードとキャリブレーション機能を搭載。壁掛けモニタでそのまま使えます。</p>
+          </div>
+          <div class="feature-cell">
+            <span class="feature-cell__idx mono" aria-hidden="true">F-08</span>
+            <h3 class="feature-cell__title">バックアップ・エクスポート</h3>
+            <p>SQLite・JSON・Markdown 形式でデータをエクスポート。記録の持ち出しや保全が容易です。</p>
+          </div>
+          <div class="feature-cell">
+            <span class="feature-cell__idx mono" aria-hidden="true">F-09</span>
+            <h3 class="feature-cell__title">LAN内クローズド運用</h3>
+            <p>外部公開せず研究室内の端末からのみ利用する前提。セッションベース認証で守られた閉じた環境で動作します。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ARCHITECTURE ============ -->
+    <section class="section section--wide" id="architecture" aria-labelledby="arch-title" data-reveal>
+      <div class="inner inner--wide">
+        <span class="numeral numeral--section" aria-hidden="true">05</span>
+        <p class="kicker" lang="en"><span>Architecture</span></p>
+        <h2 class="section__title" id="arch-title">Raspberry Pi 1台で動く、閉じた研究室LANのなかで。</h2>
+        <p class="section__lead">Raspberry Pi 上でフロントエンド（Vite 開発サーバー）とバックエンド（Uvicorn で FastAPI）を同時に起動し、研究室LAN内の端末からアクセス。データは SQLite と JSON / Markdown ファイルストアに保存し、セッションベース認証で保護。外部公開はしないクローズド構成です。</p>
+
+        <div class="schematic" role="img" aria-label="研究室LAN内端末から Raspberry Pi（Vite と FastAPI）を経由して SQLite とファイルストアへアクセスする構成図">
+          <div class="node">
+            <span class="node__label" lang="en">Clients</span>
+            <p class="node__title">研究室LAN内端末<br>タッチモニタ</p>
+          </div>
+          <div class="connector" aria-hidden="true"><span class="mono">172.16.1.111</span></div>
+          <div class="node node--core">
+            <span class="node__label" lang="en">Raspberry Pi</span>
+            <p class="node__title">Vite <span class="mono">:5173</span><br>FastAPI <span class="mono">:8000</span></p>
+          </div>
+          <div class="connector" aria-hidden="true"><span class="mono">session</span></div>
+          <div class="node">
+            <span class="node__label" lang="en">Store</span>
+            <p class="node__title">SQLite<br>JSON / Markdown</p>
+          </div>
+        </div>
+        <p class="badge-green"><span class="dot dot--green" aria-hidden="true"></span>稼働中 · LAN内 · 外部公開なし</p>
+      </div>
+    </section>
+
+    <!-- ============ TECH STACK ============ -->
+    <section class="section" id="tech" aria-labelledby="tech-title" data-reveal>
+      <div class="inner">
+        <p class="kicker" lang="en"><span>Tech Stack</span></p>
+        <h2 class="section__title" id="tech-title">モダンなフロントと、堅実なバックエンド。</h2>
+        <div class="stack-cols">
+          <div class="stack-col">
+            <h3 class="stack-col__head" lang="en">Frontend</h3>
+            <ul class="chips">
+              <li class="chip mono">React 19</li>
+              <li class="chip mono">TypeScript</li>
+              <li class="chip mono">Vite</li>
+              <li class="chip mono">React Router</li>
+              <li class="chip mono">TanStack Query</li>
+              <li class="chip mono">React Hook Form</li>
+              <li class="chip mono">Zod</li>
+              <li class="chip mono">Tailwind CSS</li>
+              <li class="chip mono">lucide-react</li>
+            </ul>
+          </div>
+          <div class="stack-col">
+            <h3 class="stack-col__head" lang="en">Backend</h3>
+            <ul class="chips">
+              <li class="chip mono">FastAPI</li>
+              <li class="chip mono">SQLite</li>
+              <li class="chip mono">JSON / Markdown store</li>
+              <li class="chip mono">Session Auth</li>
+              <li class="chip mono">pytest</li>
+              <li class="chip mono">ruff</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CTA ============ -->
+    <section class="section cta panel-blue" id="cta" aria-labelledby="cta-title" data-reveal>
+      <div class="inner cta__inner">
+        <p class="kicker kicker--light cta__kicker"><span class="mono">06</span> <span lang="en">Get Started</span></p>
+        <h2 class="section__title cta__title" id="cta-title">研究室に、導入する。</h2>
+        <p class="cta__deck">誰がいて、いつ来て、何をしたか。研究室の記録を一元化。Raspberry Pi 1台と研究室LANで、すぐに始められます。</p>
+        <div class="cta__cmd mono">
+          <span class="cta__prompt" aria-hidden="true">$</span> git clone https://github.com/akakirishima/HelloWorld.git
+        </div>
+        <div class="cta__buttons">
+          <a class="btn btn--primary" href="https://github.com/akakirishima/HelloWorld" target="_blank" rel="noopener">GitHub でソースを見る</a>
+          <a class="btn btn--ghost" href="https://github.com/akakirishima/HelloWorld#readme" target="_blank" rel="noopener">READMEを読む</a>
+          <a class="btn btn--ghost" href="https://github.com/akakirishima/HelloWorld#readme" target="_blank" rel="noopener">セットアップ手順を見る</a>
+          <a class="btn btn--ghost" href="#board">在室ボードのデモを見る</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="site-footer">
+    <div class="inner site-footer__main">
+      <div class="site-footer__brand">
+        <span class="brand__mark">LabBoard <span class="brand__tag">仮称</span></span>
+        <span class="brand__sub" lang="en">Presence / Attendance / Log</span>
+      </div>
+      <nav class="site-footer__links" aria-label="フッターナビゲーション">
+        <a href="https://github.com/akakirishima/HelloWorld" target="_blank" rel="noopener" lang="en">GitHub</a>
+        <a href="https://github.com/akakirishima/HelloWorld#readme" target="_blank" rel="noopener" lang="en">README</a>
+        <a href="https://github.com/akakirishima/HelloWorld#readme" target="_blank" rel="noopener" lang="en">Setup</a>
+        <a href="#board" lang="en">Demo</a>
+      </nav>
+    </div>
+    <div class="inner site-footer__strip mono">
+      <span><span class="dot dot--green" aria-hidden="true"></span><span lang="en">CLOSED LAN · SESSION AUTH · NO EXTERNAL ACCESS</span></span>
+      <span>© 2026 研究室 在室・勤怠・日誌管理システム</span>
+    </div>
+  </footer>
+
+  <script src="script.js" defer></script>
+</body>
+</html>
